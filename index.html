@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Mystery GO</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts: Outfit for English/Logo, Noto Sans JP for Japanese -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700&family=Outfit:wght@700;900&display=swap" rel="stylesheet">
+  
+  <style>
+    /* ベーススタイルと背景設定 */
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      /* フィールド（マップ）を意識したティールとグリーンの微細なグリッドパターン */
+      background-color: #eafbee;
+      background-image: 
+        linear-gradient(rgba(0, 168, 107, 0.08) 2px, transparent 2px),
+        linear-gradient(90deg, rgba(0, 168, 107, 0.08) 2px, transparent 2px);
+      background-size: 50px 50px;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* いつでも自由に変更可能なロゴ風テキスト (SVG画像等は不要) */
+    .title-logo-text {
+      font-family: 'Outfit', sans-serif;
+      text-transform: uppercase;
+      color: #ffffff;
+      /* 縁取り（ストローク）とドロップシャドウでポップな立体感を演出 */
+      -webkit-text-stroke: 2.5px #006064;
+      text-shadow: 
+        3px 3px 0 #00838f,
+        0 6px 12px rgba(0,0,0,0.4);
+      letter-spacing: 0.08em;
+      line-height: 1.1;
+    }
+
+    /* メインコンテナのグラスモーフィズム調（半透明のすりガラス風）スタイル */
+    .glass-card {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 2px solid rgba(255, 255, 255, 0.7);
+      box-shadow: 0 12px 30px rgba(0, 105, 92, 0.15);
+      border-radius: 24px;
+    }
+
+    /* 特大GPSチェックインボタンの波及（レーダー）アニメーション */
+    @keyframes radarPulse {
+      0% { box-shadow: 0 0 0 0 rgba(0, 191, 165, 0.7); }
+      70% { box-shadow: 0 0 0 35px rgba(0, 191, 165, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(0, 191, 165, 0); }
+    }
+    
+    .btn-radar {
+      animation: radarPulse 2s infinite;
+      /* 鮮やかなエメラルドグリーンのグラデーション */
+      background: linear-gradient(135deg, #1de9b6 0%, #00bfa5 100%);
+      border: 5px solid #ffffff;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.25);
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
+    }
+    
+    .btn-radar:active {
+      transform: scale(0.92);
+      box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body class="text-gray-800 pb-12">
+
+  <!-- ヘッダー / 動的ロゴテキスト -->
+  <header class="pt-10 pb-2 text-center px-4 z-10 w-full relative">
+    <!-- 下記のテキスト文字を書き換えるだけでロゴのように美しく表示されます -->
+    <h1 class="text-4xl text-5xl sm:text-6xl font-black title-logo-text transform -rotate-2 inline-block">
+      Mystery<br><span class="text-3xl sm:text-4xl">Explorer</span>
+    </h1>
+  </header>
+
+  <main class="flex-grow flex flex-col items-center justify-start px-4 mt-6 z-10 w-full max-w-[480px] mx-auto relative gap-6">
+    
+    <!-- メインの問題回答カード -->
+    <div id="question-container" class="glass-card w-full p-6 text-center shadow-2xl relative overflow-hidden">
+      
+      <!-- 装飾用アクセント -->
+      <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-teal-400 to-green-500"></div>
+
+      <!-- 問題情報 -->
+      <div class="mt-2 mb-6">
+        <h2 id="q-title" class="inline-flex items-center justify-center font-bold text-teal-900 bg-teal-100/80 px-5 py-1.5 rounded-full text-sm tracking-wide border border-teal-200 mb-3" style="font-family: 'Outfit', 'Noto Sans JP', sans-serif;">
+          QUEST 01
+        </h2>
+        <p id="q-text" class="text-gray-700 font-bold text-lg leading-relaxed">
+          ヒントを頼りに目的地へ向かい、答えを入力せよ。
+        </p>
+      </div>
+
+      <!-- GPSステータス表示エリア -->
+      <div id="status" class="mb-4 text-sm font-bold text-teal-800 bg-white/70 p-3 rounded-xl border border-teal-100 min-h-[50px] flex items-center justify-center drop-shadow-sm">
+        レーダーの準備ができています
+      </div>
+
+      <!-- メインアクションボタン（GPSチェックイン用） -->
+      <div class="mt-8 mb-6 relative flex justify-center">
+        <!-- レーダーアニメーション付きの特大円形ボタン -->
+        <button onclick="checkLocation()" class="btn-radar w-36 h-36 rounded-full text-white font-bold text-xl flex flex-col items-center justify-center gap-1 z-20 focus:outline-none">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-1 drop-shadow-md" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <!-- ターゲットアイコン -->
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.243-4.243a8 8 0 1111.314 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          <span class="tracking-wider" style="font-family: 'Outfit', sans-serif; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">SCAN</span>
+        </button>
+      </div>
+      
+      <!-- 回答フォームエリア -->
+      <div class="mt-6 border-t-2 border-teal-50/50 pt-5">
+        <label class="block text-xs font-bold text-teal-700 mb-2 text-left px-1 tracking-wider uppercase">Answer / 見つけた答え</label>
+        <div class="flex gap-2">
+          <!-- 入力フィールド -->
+          <input type="text" id="answer-input" placeholder="ここに入力..." class="w-full bg-white/90 border-2 border-teal-100 rounded-xl px-4 py-3 focus:outline-none focus:border-teal-500 focus:ring-4 focus:ring-teal-500/20 font-bold text-gray-800 transition-all shadow-inner">
+          
+          <!-- 送信ボタン（モンスターボールのような赤系のアクセント） -->
+          <button onclick="submitAnswer()" class="bg-gradient-to-b from-red-400 to-rose-600 hover:from-red-500 hover:to-rose-700 text-white font-bold px-6 rounded-xl shadow-lg transform transition active:scale-95 disabled:bg-gray-400 border border-rose-700/50 flex-shrink-0 flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
