@@ -5,15 +5,42 @@
  */
 
 // GASアプリの公開URLを設定 (デプロイ後に書き換えます)
-const API_URL = "https://script.google.com/macros/s/AKfycbyHAyWCeppnv4RYi_Uzl8rf1kqoTZbJBEwEzmpFfTwWKDOxjQgIaPdDCKe2F_LSBkUm3g/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwRZmSvIKjyjjNvrH-IBxg29ZIq42WewZnapiGiK-Dj8vMEPJ6-WSqfQG-dAgadh42OlQ/exec";
 
 // 初期の問題データ (本来はページロード時等に取得・設定など)
 let currentQuestionData = {
   id: "Q1",
   lat: 35.681236, // ターゲット緯度
   lng: 139.767125, // ターゲット経度
-  radiusMeters: 20000
+  radiusMeters: 20000,
+  text: "" // サーバーから取得した問題文を裏で保持しておく変数
 };
+
+/**
+ * 【追加】初回ロード時にサーバーから現在の問題データを取得して裏側にセットしておく
+ */
+async function loadCurrentQuestion() {
+  const requestData = { action: "getQuestion", questionId: currentQuestionData.id };
+  try {
+    const response = await fetchWithRetry(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify(requestData),
+      redirect: "follow"
+    }, 3, 1000);
+    const result = await response.json();
+    if (result.success && result.question) {
+      // 取得したデータで更新（緯度経度・問題文）
+      currentQuestionData.lat = result.question.lat;
+      currentQuestionData.lng = result.question.lng;
+      currentQuestionData.text = result.question.text;
+      console.log("初期問題データを裏で読み込み完了");
+    }
+  } catch (err) {
+    console.error("初期問題データの取得に失敗", err);
+  }
+}
+window.addEventListener("DOMContentLoaded", loadCurrentQuestion);
 
 /**
  * ハバーサイン公式による距離計算
@@ -55,6 +82,12 @@ function checkLocation() {
         statusEl.textContent = `到着しました！（誤差: ${Math.round(dist)}m）`;
         statusEl.classList.add("text-green-600");
         statusEl.classList.remove("text-red-500");
+
+        // 【追加】到着と同時に、隠されていた問題文を画面に表示する
+        const qText = document.getElementById("q-text");
+        if (qText && currentQuestionData.text) {
+          qText.textContent = "【問題】" + currentQuestionData.text; // ここで初めて謎が開示される！
+        }
       } else {
         statusEl.textContent = `まだ目的地から離れています（距離: ${Math.round(dist)}m）`;
         statusEl.classList.remove("text-green-600");
@@ -143,8 +176,9 @@ async function submitAnswer() {
         const qTitle = document.getElementById("q-title");
         const qText = document.getElementById("q-text");
 
-        if (qTitle) qTitle.textContent = `問題: ${currentQuestionData.id}`;
-        if (qText) qText.textContent = currentQuestionData.text || "新しい目的地を目指してください";
+        if (qTitle) qTitle.textContent = `QUEST: ${currentQuestionData.id}`;
+        // 【追加】次の問題に進んだ際は、問題文を再び隠し、到着するまで見せない仕様にする
+        if (qText) qText.textContent = "ヒントを頼りに目的地へ向かい、答えを入力せよ。";
         if (answerInput) answerInput.value = "";
 
         statusEl.textContent = "";
