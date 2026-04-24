@@ -5,22 +5,36 @@
  */
 
 // GASアプリの公開URLを設定 (デプロイ後に書き換えます)
-const API_URL = "https://script.google.com/macros/s/AKfycbwRZmSvIKjyjjNvrH-IBxg29ZIq42WewZnapiGiK-Dj8vMEPJ6-WSqfQG-dAgadh42OlQ/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbym_h8GSfxjQxteDX7tac686nYfzGDaQr5wrmm94VSg-UMXmjtGISVnIJ2qzF37oI6bBw/exec";
 
-// 初期の問題データ (本来はページロード時等に取得・設定など)
-let currentQuestionData = {
-  id: "Q1",
-  lat: 35.681236, // ターゲット緯度
-  lng: 139.767125, // ターゲット経度
+// =======================
+// [設定] ゲームモード
+// =======================
+const GAME_MODE = "RANDOM"; // "SEQUENTIAL"（連番） または "RANDOM"（ランダム）
+const REQUIRED_CLEAR_COUNT = 0; // 0なら無限モード（スコア競争）、数字ならその問数でクリア判定
+
+// ローカルストレージからの履歴の復元
+let solvedHistory = JSON.parse(localStorage.getItem('mystery_solved_history')) || [];
+
+// 初期の問題データ（ローカルストレージから復元、または初回はAUTOとしてサーバーに委ねる）
+let currentQuestionData = JSON.parse(localStorage.getItem('mystery_current_question')) || {
+  id: "AUTO",
+  lat: 0,
+  lng: 0,
   radiusMeters: 20000,
-  text: "" // サーバーから取得した問題文を裏で保持しておく変数
+  text: ""
 };
 
 /**
- * 【追加】初回ロード時にサーバーから現在の問題データを取得して裏側にセットしておく
+ * 初回ロード時にサーバーから現在の問題データを取得してセットする
  */
 async function loadCurrentQuestion() {
-  const requestData = { action: "getQuestion", questionId: currentQuestionData.id };
+  const requestData = {
+    action: "getQuestion",
+    questionId: currentQuestionData.id,
+    mode: GAME_MODE,
+    history: solvedHistory
+  };
   try {
     const response = await fetchWithRetry(API_URL, {
       method: "POST",
@@ -34,7 +48,32 @@ async function loadCurrentQuestion() {
       currentQuestionData.lat = result.question.lat;
       currentQuestionData.lng = result.question.lng;
       currentQuestionData.text = result.question.text;
-      console.log("初期問題データを裏で読み込み完了");
+
+      // UIの更新（モードに応じたスコア表示）
+      const qTitle = document.getElementById("q-title");
+      const qText = document.getElementById("q-text");
+      if (qTitle) {
+        if (REQUIRED_CLEAR_COUNT > 0) {
+          const remaining = REQUIRED_CLEAR_COUNT - solvedHistory.length;
+          qTitle.textContent = `QUEST: ${currentQuestionData.id} (残り: ${remaining}問)`;
+        } else {
+          qTitle.textContent = `SCORE: ${solvedHistory.length} | QUEST: ${currentQuestionData.id}`;
+        }
+      }
+      if (qText) qText.textContent = currentQuestionData.text;
+
+      // バックアップとしてローカルストレージに保存
+      localStorage.setItem('mystery_current_question', JSON.stringify(currentQuestionData));
+      console.log("問題データを読み込み完了");
+
+    } else if (result.success && !result.question) {
+      // 問題が残っていない場合（ロード時のクリア発火）
+      const container = document.getElementById("question-container");
+      if (container) {
+        container.innerHTML = `<h2 class='text-2xl font-bold text-teal-800 mb-4'>🎉 GAME CLEARED!</h2>
+        <p class='text-lg font-bold'>最終スコア: ${solvedHistory.length}問</p>
+        <p class='text-gray-600 mt-4'>全問制覇しました！おめでとうございます！</p>`;
+      }
     }
   } catch (err) {
     console.error("初期問題データの取得に失敗", err);
@@ -80,14 +119,10 @@ function checkLocation() {
 
       if (dist <= currentQuestionData.radiusMeters) {
         statusEl.textContent = `到着しました！（誤差: ${Math.round(dist)}m）`;
-        statusEl.classList.add("text-green-600");
-        statusEl.classList.remove("text-red-500");
+        // クラスを綺麗に適用するためclassNameで上書き
+        statusEl.className = "mb-4 text-sm font-bold text-green-700 bg-green-50 p-3 rounded-xl border border-green-200 min-h-[50px] flex items-center justify-center drop-shadow-sm";
 
-        // 【追加】到着と同時に、隠されていた問題文を画面に表示する
-        const qText = document.getElementById("q-text");
-        if (qText && currentQuestionData.text) {
-          qText.textContent = "【問題】" + currentQuestionData.text; // ここで初めて謎が開示される！
-        }
+        // (問題文は最初から表示されるため、ここで独自に上書きする処理は撤去しました)
       } else {
         statusEl.textContent = `まだ目的地から離れています（距離: ${Math.round(dist)}m）`;
         statusEl.classList.remove("text-green-600");
@@ -145,13 +180,22 @@ async function submitAnswer() {
     return;
   }
 
+  // 【チート防止】GPSで正しく「到着」していない場合は送信自体をブロックする
+  if (statusEl.textContent.indexOf("到着しました") === -1) {
+    alert("まずは「SCAN」ボタンを押して、目的地に到着したことを確認してください！");
+    return;
+  }
+
   statusEl.textContent = "サーバーと通信中...";
-  statusEl.classList.remove("text-red-500", "text-green-600");
+  statusEl.className = "mb-4 text-sm font-bold text-gray-700 bg-gray-50 p-3 rounded-xl border border-gray-200 min-h-[50px] flex items-center justify-center drop-shadow-sm";
 
   const requestData = {
     userId: "user_123", // 実際はUUIDなどを生成してLocalStorage保存
     questionId: currentQuestionData.id,
-    answer: answer
+    answer: answer,
+    mode: GAME_MODE,
+    history: solvedHistory,
+    requiredClearCount: REQUIRED_CLEAR_COUNT
   };
 
   try {
@@ -167,30 +211,55 @@ async function submitAnswer() {
 
     const result = await response.json();
 
-    if (result.success && result.isCorrect) {
-      alert("正解です！次の問題へ進みます！");
+    if (result.success) {
+      if (result.isCorrect) {
+        alert("正解です！次の目的地へ進みます！");
 
-      if (result.nextQuestion) {
-        currentQuestionData = result.nextQuestion;
-
-        const qTitle = document.getElementById("q-title");
-        const qText = document.getElementById("q-text");
-
-        if (qTitle) qTitle.textContent = `QUEST: ${currentQuestionData.id}`;
-        // 【追加】次の問題に進んだ際は、問題文を再び隠し、到着するまで見せない仕様にする
-        if (qText) qText.textContent = "ヒントを頼りに目的地へ向かい、答えを入力せよ。";
-        if (answerInput) answerInput.value = "";
-
-        statusEl.textContent = "";
-      } else {
-        const container = document.getElementById("question-container");
-        if (container) {
-          container.innerHTML = "<h2 class='text-xl font-bold'>全クリア！おめでとうございます！</h2>";
+        // 履歴を更新して永続化
+        if (!solvedHistory.includes(currentQuestionData.id)) {
+          solvedHistory.push(currentQuestionData.id);
+          localStorage.setItem('mystery_solved_history', JSON.stringify(solvedHistory));
         }
+
+        if (result.nextQuestion) {
+          currentQuestionData = result.nextQuestion;
+          currentQuestionData.radiusMeters = 20000;
+          localStorage.setItem('mystery_current_question', JSON.stringify(currentQuestionData));
+
+          const qTitle = document.getElementById("q-title");
+          const qText = document.getElementById("q-text");
+
+          // UIの更新（モードに応じたスコア表示）
+          if (qTitle) {
+            if (REQUIRED_CLEAR_COUNT > 0) {
+              const remaining = REQUIRED_CLEAR_COUNT - solvedHistory.length;
+              qTitle.textContent = `QUEST: ${currentQuestionData.id} (残り: ${remaining}問)`;
+            } else {
+              qTitle.textContent = `SCORE: ${solvedHistory.length} | QUEST: ${currentQuestionData.id}`;
+            }
+          }
+          if (qText) qText.textContent = currentQuestionData.text;
+          if (answerInput) answerInput.value = "";
+
+          // ステータス表示を初期デザインへリセット
+          statusEl.textContent = "レーダーの準備ができています";
+          statusEl.className = "mb-4 text-sm font-bold text-teal-800 bg-white/70 p-3 rounded-xl border border-teal-100 min-h-[50px] flex items-center justify-center drop-shadow-sm";
+        } else {
+          const container = document.getElementById("question-container");
+          if (container) {
+            container.innerHTML = `<h2 class='text-2xl font-bold text-teal-800 mb-4'>🎉 GAME CLEARED!</h2>
+            <p class='text-lg font-bold'>最終スコア: ${solvedHistory.length}問</p>
+            <p class='text-gray-600 mt-4'>ミッションコンプリート！見事すべての目的を達成しました。</p>`;
+          }
+        }
+      } else {
+        statusEl.textContent = "不正解です。もう一度お試しください。";
+        statusEl.className = "mb-4 text-sm font-bold text-red-600 bg-red-50 p-3 rounded-xl border border-red-200 min-h-[50px] flex items-center justify-center drop-shadow-sm";
       }
     } else {
-      statusEl.textContent = "不正解です。もう一度考えてみましょう。";
-      statusEl.classList.add("text-red-500");
+      // サーバー側の通信エラー（排他ロック失敗など）
+      statusEl.textContent = `エラー: ${result.error || "通信に失敗しました"}`;
+      statusEl.className = "mb-4 text-sm font-bold text-red-600 bg-red-50 p-3 rounded-xl border border-red-200 min-h-[50px] flex items-center justify-center drop-shadow-sm";
     }
   } catch (err) {
     console.error(err);
