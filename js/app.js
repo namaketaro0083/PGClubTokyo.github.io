@@ -12,7 +12,7 @@ let currentQuestionData = {
   id: "Q1",
   lat: 35.681236, // ターゲット緯度
   lng: 139.767125, // ターゲット経度
-  radiusMeters: 20
+  radiusMeters: 20000
 };
 
 /**
