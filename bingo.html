@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokémon GO ビンゴカード</title>
+    <style>
+        :root {
+            --primary-color: #3b4cca;
+            --accent-color: #ffde00;
+            --bg-color: #f0f0f0;
+            --cell-size: 100px;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            text-shadow: 2px 2px var(--accent-color);
+            margin-bottom: 10px;
+        }
+
+        /* ビンゴボードのスタイル */
+        .bingo-board {
+            display: grid;
+            grid-template-columns: repeat(5, var(--cell-size));
+            grid-template-rows: repeat(5, var(--cell-size));
+            gap: 5px;
+            background-color: #ccc;
+            border: 5px solid var(--primary-color);
+            border-radius: 8px;
+            padding: 5px;
+        }
+
+        /* マスのスタイル */
+        .cell {
+            background-color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 5px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            user-select: none;
+            overflow: hidden;
+            word-break: break-all;
+        }
+
+        /* クリックした時の「達成」スタイル */
+        .cell.checked {
+            background-color: var(--accent-color);
+            color: var(--primary-color);
+            position: relative;
+        }
+
+        .cell.checked::after {
+            content: '✔️';
+            position: absolute;
+            font-size: 2rem;
+            opacity: 0.3;
+        }
+
+        /* 中央（FREE）のスタイル */
+        .cell.free {
+            background-color: #ffeef0;
+            font-size: 1.2rem;
+            color: #d32f2f;
+        }
+
+        @media (max-width: 550px) {
+            :root {
+                --cell-size: 18vw;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>PoGO Bingo</h1>
+
+    <div id="bingo-board" class="bingo-board">
+        </div>
+
+    <script>
+        // ==========================================
+        // 【修正ポイント】ここを書き換えてください
+        // ==========================================
+        const bingoItems = [
+            "ゼルネアスかイベルタルを捕まえる", "ルートを歩く", "5kmタマゴをかえす", "トリミアンのカットを変える", "メガシンカポケモンを捕まえる",
+            "星3ポケモンを30匹捕まえる", "GOパス レベル150到達", "リンクチャージを上限まで集める", "アンバサダーとハイタッチ", "特別なポケストップを回す",
+            "AR写真を撮る", "新しいフレンドを作る", "FREE (中央)", "おこうでアンノーンを捕まえる", "5人とポケモン交換",
+            "メガボーマンダを倒して捕まえる", "ドラゴンタイプを5種類捕まえる", "色違いポケモンを見つける", "CP617の個体を捕まえる", "ロケーションカード付きを捕まえる",
+            "メガイカエールを倒して捕まえる", "GOスナップショットでサプライズ", "ノーマルタイプを5種類捕まえる", "相棒とハートを12個獲得", "キャッチカードをシェア"
+        ];
+
+        const board = document.getElementById('bingo-board');
+
+        function createBoard() {
+            bingoItems.forEach((item, index) => {
+                const cell = document.createElement('div');
+                cell.classList.add('cell');
+                cell.textContent = item;
+
+                // 中央（インデックス12）をFREEに設定する場合
+                if (index === 12) {
+                    cell.classList.add('free');
+                }
+
+                // クリックイベント
+                cell.addEventListener('click', () => {
+                    cell.classList.toggle('checked');
+                });
+
+                board.appendChild(cell);
+            });
+        }
+
+        createBoard();
+    </script>
+</body>
+</html>
