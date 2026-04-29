@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokémon GO Fest Tokyo ビンゴ</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="bingo-overlay" class="overlay"></div>
+
+    <div class="container">
+        <header>
+            <h1>GO Fest Tokyo Bingo!</h1>
+            <p>マスに書かれたタスクをクリアして、ビンゴを目指そう！</p>
+        </header>
+
+        <div id="bingo-board" class="bingo-board">
+            <!-- JavaScriptで動的に生成されます -->
+        </div>
+
+        <footer>
+            <button id="reset-button" class="reset-button">進捗をリセット</button>
+            <p class="footnotes">ビンゴが揃うと何かが起きるかも...？<br>イベントを思いっきり楽しもう！</p>
+        </footer>
+    </div>
+
+    <!-- 紙吹雪のエフェクト用ライブラリ -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

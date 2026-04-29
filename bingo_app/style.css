@@ -1,0 +1,200 @@
+:root {
+    --primary-color: #ff3366;
+    --primary-dark: #cc0044;
+    --accent-color: #00d2ff;
+    --text-light: #ffffff;
+    --text-dark: #333333;
+    --glass-bg: rgba(255, 255, 255, 0.15);
+    --glass-border: rgba(255, 255, 255, 0.3);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-image: url('bg.png');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    color: var(--text-dark);
+    padding: 20px;
+}
+
+/* グラスモーフィズムなコンテナ */
+.container {
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    padding: 30px;
+    max-width: 800px;
+    width: 100%;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    text-align: center;
+    color: var(--text-light);
+}
+
+header h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 10px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    background: -webkit-linear-gradient(45deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.3));
+}
+
+header p {
+    font-size: 1.1rem;
+    margin-bottom: 30px;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+}
+
+/* ビンゴボードのグリッド */
+.bingo-board {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin-bottom: 30px;
+}
+
+.bingo-cell {
+    aspect-ratio: 1 / 1;
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 12px;
+    padding: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    font-size: clamp(0.7rem, 2vw, 1rem);
+    font-weight: bold;
+    color: var(--text-dark);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    position: relative;
+    overflow: hidden;
+    user-select: none;
+}
+
+.bingo-cell:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+    background: #ffffff;
+}
+
+/* クリア（完了）状態 */
+.bingo-cell.completed {
+    background: var(--primary-color);
+    color: var(--text-light);
+    transform: scale(0.95);
+    box-shadow: inset 0 3px 6px rgba(0,0,0,0.2);
+}
+
+.bingo-cell.completed::after {
+    content: '✔';
+    position: absolute;
+    font-size: clamp(3rem, 5vw, 4rem);
+    color: rgba(255, 255, 255, 0.3);
+    pointer-events: none;
+}
+
+.bingo-cell.completed .icon {
+    opacity: 0.3;
+}
+
+.bingo-cell .icon {
+    font-size: 1.5rem;
+    display: block;
+    margin-bottom: 4px;
+}
+
+/* 中央のフリーマス */
+.bingo-cell.free-space {
+    background: linear-gradient(135deg, var(--accent-color), #005cff);
+    color: white;
+}
+
+.bingo-cell.free-space.completed {
+    background: var(--primary-color);
+}
+
+/* フッター */
+footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.reset-button {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255,255,255,0.5);
+    color: white;
+    padding: 10px 24px;
+    border-radius: 30px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(5px);
+}
+
+.reset-button:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
+}
+
+.footnotes {
+    font-size: 0.85rem;
+    opacity: 0.8;
+}
+
+.overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.3);
+    z-index: 1000;
+    pointer-events: none;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 600px) {
+    .container {
+        padding: 15px;
+        border-radius: 16px;
+    }
+    
+    .bingo-board {
+        gap: 4px;
+    }
+    
+    .bingo-cell {
+        border-radius: 8px;
+        padding: 4px;
+        font-size: 0.65rem;
+    }
+    
+    header h1 {
+        font-size: 1.8rem;
+    }
+    
+    header p {
+        font-size: 0.9rem;
+    }
+}
