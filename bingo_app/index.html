@@ -3,10 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pokémon GO Fest Tokyo ビンゴ</title>
+    <title>Pokémon GO Club Tokyo ビンゴ</title>
+    <!-- 電光掲示板風のフォントを読み込み -->
+    <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- 電光掲示板（ティッカー） -->
+    <div class="ticker-wrapper">
+        <div class="ticker-content" id="ticker-text">
+            【運営より】まもなく15時から特定のエリアでスペシャルなポケモンが大量発生予定！水分補給をこまめに行い、熱中症にご注意ください！
+        </div>
+    </div>
+
     <div id="bingo-overlay" class="overlay"></div>
 
     <div class="container">
@@ -14,6 +23,25 @@
             <h1>GO Fest Tokyo Bingo!</h1>
             <p>マスに書かれたタスクをクリアして、ビンゴを目指そう！</p>
         </header>
+
+        <!-- 全体ダッシュボード -->
+        <div class="dashboard">
+            <div class="stat-box">
+                <span class="stat-icon">👥</span>
+                <span class="stat-label">参加者数</span>
+                <span class="stat-value" id="total-users">1,205</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-icon">🥉</span>
+                <span class="stat-label">1ビンゴ</span>
+                <span class="stat-value" id="bingo1-count">124</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-icon">🥇</span>
+                <span class="stat-label">2ビンゴ</span>
+                <span class="stat-value" id="bingo2-count">42</span>
+            </div>
+        </div>
 
         <div id="bingo-board" class="bingo-board">
             <!-- JavaScriptで動的に生成されます -->
@@ -24,6 +52,9 @@
             <p class="footnotes">ビンゴが揃うと何かが起きるかも...？<br>イベントを思いっきり楽しもう！</p>
         </footer>
     </div>
+
+    <!-- トースト通知 -->
+    <div id="toast-container" class="toast-container"></div>
 
     <!-- 紙吹雪のエフェクト用ライブラリ -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
